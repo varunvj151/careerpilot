@@ -1,0 +1,9 @@
+spring:
+  cache:
+    type: none
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+# Also disable Flyway for simple context loads if needed, but Testcontainers uses it, so it's fine.
