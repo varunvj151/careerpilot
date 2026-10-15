@@ -3,9 +3,9 @@ spring:
     name: careerpilot-backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/careerpilot}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:postgresql://localhost:5433/careerpilot}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:root}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:password}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -48,7 +48,7 @@ spring:
       fail-on-unknown-properties: false
 
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${PORT:${SERVER_PORT:8081}}
   error:
     include-message: never
 cors:
@@ -88,7 +88,7 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 spring.cache:
-  type: redis
+  type: ${CACHE_TYPE:simple}
   redis:
     time-to-live: 1h
 

@@ -16,11 +16,13 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 import java.time.Duration;
 
 @Configuration
 @EnableCaching
-@Profile("!dev-local")  // Redis is only wired when not running the dev-local profile
+@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
 public class RedisConfig {
 
     @Bean
