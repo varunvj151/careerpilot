@@ -23,10 +23,10 @@ export const AnalysisResults: React.FC = () => {
 
     const fetchAnalysis = async () => {
       try {
-        const response = await api.get(`/resumes/${id}`);
+        const response = await api.get(`/analysis/${id}`);
         setAnalysis(response.data);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch analysis details.');
+        setError(err.response?.data?.message || 'An unexpected error occurred. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -52,6 +52,19 @@ export const AnalysisResults: React.FC = () => {
   }
 
   if (!analysis) return null;
+
+  // Map backend fields to display values
+  const overallScore = Number(analysis.matchPercentage ?? 0);
+  const scores = analysis.scores ?? {};
+  const skillsScore = Number(scores.requiredSkillsScore ?? scores.skillsScore ?? 0);
+  const experienceScore = Number(scores.experienceScore ?? 0);
+  const educationScore = Number(scores.educationScore ?? 0);
+  const keywordScore = Number(scores.keywordCoverageScore ?? scores.formatScore ?? 0);
+
+  const matchingSkills: string[] = analysis.matchingSkills ?? [];
+  const missingSkills: any[] = analysis.missingSkills ?? [];
+  const recommendations: any[] = analysis.recommendations ?? [];
+  const strengths: string[] = analysis.strengths ?? [];
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 mt-8 pb-12">
@@ -79,16 +92,16 @@ export const AnalysisResults: React.FC = () => {
                 <path
                   className="text-primary stroke-current"
                   strokeWidth="3"
-                  strokeDasharray={`${analysis.overallScore}, 100`}
+                  strokeDasharray={`${overallScore}, 100`}
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
               </svg>
-              <div className="absolute text-4xl font-bold">{Math.round(analysis.overallScore)}%</div>
+              <div className="absolute text-4xl font-bold">{Math.round(overallScore)}%</div>
             </div>
             <p className="mt-4 text-center font-medium text-primary">
-              {analysis.overallScore >= 80 ? 'Excellent Match!' : 
-               analysis.overallScore >= 60 ? 'Good Match' : 'Needs Improvement'}
+              {overallScore >= 80 ? 'Excellent Match!' :
+               overallScore >= 60 ? 'Good Match' : 'Needs Improvement'}
             </p>
           </CardContent>
         </Card>
@@ -102,30 +115,30 @@ export const AnalysisResults: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Skills Match</span>
-                <span className="text-sm font-medium">{analysis.skillsScore}%</span>
+                <span className="text-sm font-medium">{Math.round(skillsScore)}%</span>
               </div>
-              <Progress value={analysis.skillsScore} className="h-2" />
+              <Progress value={skillsScore} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Experience Level</span>
-                <span className="text-sm font-medium">{analysis.experienceScore}%</span>
+                <span className="text-sm font-medium">{Math.round(experienceScore)}%</span>
               </div>
-              <Progress value={analysis.experienceScore} className="h-2" />
+              <Progress value={experienceScore} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Education</span>
-                <span className="text-sm font-medium">{analysis.educationScore}%</span>
+                <span className="text-sm font-medium">{Math.round(educationScore)}%</span>
               </div>
-              <Progress value={analysis.educationScore} className="h-2" />
+              <Progress value={educationScore} className="h-2" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Format & Keywords</span>
-                <span className="text-sm font-medium">{analysis.formatScore || 85}%</span>
+                <span className="text-sm font-medium">Keyword Coverage</span>
+                <span className="text-sm font-medium">{Math.round(keywordScore)}%</span>
               </div>
-              <Progress value={analysis.formatScore || 85} className="h-2" />
+              <Progress value={keywordScore} className="h-2" />
             </div>
           </CardContent>
         </Card>
@@ -141,12 +154,17 @@ export const AnalysisResults: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {analysis.matchedSkills?.map((skill: string, idx: number) => (
+              {matchingSkills.map((skill: string, idx: number) => (
                 <Badge key={idx} variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
                   {skill}
                 </Badge>
               ))}
-              {(!analysis.matchedSkills || analysis.matchedSkills.length === 0) && (
+              {strengths.length > 0 && matchingSkills.length === 0 && strengths.map((s: string, idx: number) => (
+                <Badge key={idx} variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
+                  {s}
+                </Badge>
+              ))}
+              {matchingSkills.length === 0 && strengths.length === 0 && (
                 <p className="text-sm text-muted-foreground">No matching skills identified.</p>
               )}
             </div>
@@ -162,12 +180,12 @@ export const AnalysisResults: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {analysis.missingSkills?.map((skill: string, idx: number) => (
+              {missingSkills.map((skill: any, idx: number) => (
                 <Badge key={idx} variant="outline" className="border-red-200 text-red-700 bg-red-50">
-                  {skill}
+                  {typeof skill === 'string' ? skill : skill.skill ?? skill.name ?? JSON.stringify(skill)}
                 </Badge>
               ))}
-              {(!analysis.missingSkills || analysis.missingSkills.length === 0) && (
+              {missingSkills.length === 0 && (
                 <p className="text-sm text-muted-foreground">No missing skills identified!</p>
               )}
             </div>
@@ -184,29 +202,31 @@ export const AnalysisResults: React.FC = () => {
         </CardHeader>
         <CardContent>
           <ul className="space-y-4">
-            {analysis.recommendations?.map((rec: string, idx: number) => (
+            {recommendations.map((rec: any, idx: number) => (
               <li key={idx} className="flex gap-3 text-sm">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-medium text-xs">
                   {idx + 1}
                 </span>
-                <span className="pt-1 leading-relaxed">{rec}</span>
+                <span className="pt-1 leading-relaxed">
+                  {typeof rec === 'string' ? rec : rec.recommendation ?? rec.text ?? rec.description ?? JSON.stringify(rec)}
+                </span>
               </li>
             ))}
-            {(!analysis.recommendations || analysis.recommendations.length === 0) && (
+            {recommendations.length === 0 && (
               <p className="text-sm text-muted-foreground">No recommendations available.</p>
             )}
           </ul>
         </CardContent>
       </Card>
-      
+
       <div className="flex justify-center pt-8 gap-4">
-        <a 
+        <a
           href={`/improvement?analysisId=${analysis.id}`}
           className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-8 py-2 shadow"
         >
           Auto-Improve Resume Bullets
         </a>
-        <a 
+        <a
           href={`/roadmap?analysisId=${analysis.id}`}
           className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-8 py-2"
         >

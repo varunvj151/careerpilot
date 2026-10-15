@@ -1,6 +1,6 @@
 package com.careerpilot.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
@@ -33,8 +33,8 @@ public class AsyncJob {
     @Column(nullable = false, length = 20)
     private JobStatus status;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "result_payload", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "result_payload", columnDefinition = "json")
     private Object resultPayload;
 
     @Column(name = "error_message", columnDefinition = "TEXT")

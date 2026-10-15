@@ -1,0 +1,67 @@
+# ============================================================
+# application-dev-local.yml
+# Dev profile: H2 in-memory DB + simple cache (no Docker needed)
+# Usage: mvn spring-boot:run -Dspring-boot.run.profiles=dev-local
+# ============================================================
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.redis.RedisHealthContributorAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.redis.RedisReactiveHealthContributorAutoConfiguration
+
+  datasource:
+    url: "jdbc:h2:mem:careerpilot;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;NON_KEYWORDS=VALUE;DEFAULT_NULL_ORDERING=HIGH"
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  flyway:
+    enabled: false
+
+  cache:
+    type: simple
+
+server:
+  port: 8081
+
+management:
+  health:
+    redis:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+
+# Override deprecated model
+ai:
+  gemini:
+    model: gemini-3.6-flash
+    timeout-seconds: 60
+
+logging:
+  level:
+    com.careerpilot: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+

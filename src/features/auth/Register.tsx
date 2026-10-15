@@ -37,7 +37,7 @@ export const Register: React.FC = () => {
         password: data.password
       };
       const response = await api.post('/auth/register', payload);
-      login(response.data.token);
+      login(response.data.token || response.data.accessToken);
       navigate('/');
     } catch (error: any) {
       setServerError(error.response?.data?.message || 'Failed to register');
@@ -50,9 +50,10 @@ export const Register: React.FC = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium leading-6 text-slate-900">First name</label>
+            <label htmlFor="firstName" className="block text-sm font-medium leading-6 text-slate-900">First name</label>
             <div className="mt-2">
               <input
+                id="firstName"
                 {...register('firstName')}
                 type="text"
                 className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"
@@ -61,9 +62,10 @@ export const Register: React.FC = () => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium leading-6 text-slate-900">Last name</label>
+            <label htmlFor="lastName" className="block text-sm font-medium leading-6 text-slate-900">Last name</label>
             <div className="mt-2">
               <input
+                id="lastName"
                 {...register('lastName')}
                 type="text"
                 className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"
@@ -74,9 +76,10 @@ export const Register: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium leading-6 text-slate-900">Email address</label>
+          <label htmlFor="registerEmail" className="block text-sm font-medium leading-6 text-slate-900">Email address</label>
           <div className="mt-2">
             <input
+              id="registerEmail"
               {...register('email')}
               type="email"
               className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"
@@ -86,9 +89,10 @@ export const Register: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium leading-6 text-slate-900">Password</label>
+          <label htmlFor="registerPassword" className="block text-sm font-medium leading-6 text-slate-900">Password</label>
           <div className="mt-2">
             <input
+              id="registerPassword"
               {...register('password')}
               type="password"
               className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"

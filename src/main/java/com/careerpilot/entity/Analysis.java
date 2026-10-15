@@ -1,6 +1,6 @@
 package com.careerpilot.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
@@ -43,40 +43,40 @@ public class Analysis {
     @Column(name = "match_percentage", precision = 5, scale = 2)
     private BigDecimal matchPercentage;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "matching_skills", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "matching_skills", columnDefinition = "json")
     private List<String> matchingSkills;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "missing_skills", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "missing_skills", columnDefinition = "json")
     private List<MissingSkillDto> missingSkills;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "strengths", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "strengths", columnDefinition = "json")
     private List<String> strengths;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "weaknesses", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "weaknesses", columnDefinition = "json")
     private List<String> weaknesses;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "extracted_resume", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "extracted_resume", columnDefinition = "json")
     private ParsedResumeDto extractedResume;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "extracted_jd", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "extracted_jd", columnDefinition = "json")
     private ParsedJobDescriptionDto extractedJd;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "scores", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "scores", columnDefinition = "json")
     private AnalysisScoreDto scores;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "recommendations", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "recommendations", columnDefinition = "json")
     private List<com.careerpilot.dto.analysis.RecommendationDto> recommendations;
 
-    @Type(JsonBinaryType.class)
-    @Column(name = "timing", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(name = "timing", columnDefinition = "json")
     private com.careerpilot.dto.analysis.AnalysisTimingDto timing;
 
     @Column(name = "ai_model", length = 100)

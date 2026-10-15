@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "ai.gemini")
 public class AiProperties {
     private String apiKey;
-    private String model = "gemini-1.5-flash";
+    private String model = "gemini-2.0-flash";
     private Double temperature = 0.3;
     private Double topP = 0.95;
     private Integer maxOutputTokens = 8192;

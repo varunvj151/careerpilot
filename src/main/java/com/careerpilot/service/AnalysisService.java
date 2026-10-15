@@ -54,7 +54,7 @@ public class AnalysisService {
     @org.springframework.beans.factory.annotation.Autowired
     private AnalysisService self;
 
-    @Value("${ai.gemini.model:gemini-1.5-flash}")
+    @Value("${ai.gemini.model:gemini-2.0-flash}")
     private String aiModel;
     private static final String ANALYSIS_VERSION = "2.0";
     

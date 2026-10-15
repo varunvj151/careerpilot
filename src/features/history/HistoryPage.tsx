@@ -24,7 +24,7 @@ export const HistoryPage: React.FC = () => {
       // Assuming a GET /api/v1/analysis or GET /api/v1/resumes endpoint that lists past analyses
       // For this implementation, let's assume we have an endpoint like that. 
       // If it returns a paginated list or list of AnalysisResponse
-      const response = await api.get('/analysis');
+      const response = await api.get('/analysis/history');
       // Adjust according to backend paginated response vs list
       setHistory(Array.isArray(response.data) ? response.data : response.data.content || []);
       setError(null);

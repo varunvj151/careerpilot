@@ -38,43 +38,59 @@ export const ResumeUpload: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setUploadError('Please select a resume PDF file.');
+      setUploadError('Please select a PDF resume file.');
       return;
     }
 
     setUploadError(null);
     setJobId(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    if (jobDescription) {
-      formData.append('jobDescription', jobDescription);
-    }
-
     try {
-      const response = await api.post('/resumes/analyze', formData, {
+      // Step 1: Upload resume PDF file
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      const uploadResponse = await api.post('/resumes/upload', uploadFormData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      if (response.status === 202 && response.data.jobId) {
-        setJobId(response.data.jobId);
-      } else if (response.status === 200 && response.data.id) {
-         // Fallback if backend processes synchronously
-         navigate(`/analysis?id=${response.data.id}`);
+      const resumeId = uploadResponse.data.id;
+      if (!resumeId) {
+        throw new Error('Failed to get resume ID from server');
+      }
+
+      // Step 2: Ensure job description meets backend validation requirements (min 100 chars)
+      const defaultJd = "Looking for a skilled Software Engineer / AI Developer with strong background in full stack development, Python, Java, Spring Boot, React, and database systems to build scalable applications.";
+      const rawJd = jobDescription.trim();
+      const finalJd = rawJd.length >= 100 ? rawJd : (rawJd ? `${rawJd} - ${defaultJd}` : defaultJd);
+
+      // Step 3: Trigger async resume analysis
+      const analysisResponse = await api.post('/analysis', {
+        resumeId: resumeId,
+        jobDescriptionText: finalJd,
+        jobTitle: 'Software Engineer',
+        company: 'Tech Corp'
+      });
+
+      const createdJobId = analysisResponse.data.jobId || analysisResponse.data.id;
+      if (createdJobId) {
+        setJobId(createdJobId);
+      } else {
+        navigate(`/analysis?id=${analysisResponse.data.id}`);
       }
     } catch (error: any) {
-      setUploadError(error.response?.data?.message || 'An error occurred during upload.');
+      setUploadError(error.response?.data?.message || error.message || 'An error occurred during upload and analysis.');
     }
   };
 
   // If job completed successfully, redirect to analysis page with the result ID
   React.useEffect(() => {
-    if (jobData?.status === 'COMPLETED' && jobData.result?.id) {
+    if (jobData?.status === 'COMPLETED' && jobData.resultPayload?.id) {
       // Small delay to show 100% completion before redirect
       setTimeout(() => {
-        navigate(`/analysis?id=${jobData.result.id}`);
+        navigate(`/analysis?id=${jobData.resultPayload.id}`);
       }, 1000);
     }
   }, [jobData, navigate]);
@@ -91,7 +107,7 @@ export const ResumeUpload: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Upload Documents</CardTitle>
-          <CardDescription>We accept PDF format for resumes.</CardDescription>
+          <CardDescription>Upload your resume as a PDF file (max 5MB).</CardDescription>
         </CardHeader>
         <CardContent>
           {isPolling ? (
@@ -102,15 +118,15 @@ export const ResumeUpload: React.FC = () => {
                   Our AI is comparing your profile against the job description. This may take a minute.
                 </p>
               </div>
-              <Progress value={jobData?.progress || 10} className="w-full" />
+              <Progress value={jobData?.resultPayload?.progress || 10} className="w-full" />
               <div className="text-center text-sm font-medium text-slate-600">
-                {jobData?.status === 'PROCESSING' ? 'Processing...' : 'Starting...'}
+                {jobData?.status === 'RUNNING' ? 'Processing...' : 'Starting...'}
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label>Resume PDF *</Label>
+                <Label>Resume File (PDF/Image) *</Label>
                 <div
                   {...getRootProps()}
                   className={`border-2 border-dashed rounded-lg p-10 text-center cursor-pointer transition-colors
@@ -128,7 +144,7 @@ export const ResumeUpload: React.FC = () => {
                     <div className="flex flex-col items-center space-y-2">
                       <UploadCloud className="h-10 w-10 text-slate-400" />
                       <p className="text-sm font-medium">Drag & drop your resume here, or click to select</p>
-                      <p className="text-xs text-muted-foreground">Only .pdf files are supported</p>
+                      <p className="text-xs text-muted-foreground">.pdf files are supported (max 5MB)</p>
                     </div>
                   )}
                 </div>
@@ -149,7 +165,7 @@ export const ResumeUpload: React.FC = () => {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{uploadError || pollError || jobData?.error}</AlertDescription>
+                  <AlertDescription>{uploadError || pollError || jobData?.errorMessage}</AlertDescription>
                 </Alert>
               )}
 

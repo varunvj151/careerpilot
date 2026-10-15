@@ -1,6 +1,6 @@
 package com.careerpilot.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
@@ -30,8 +30,8 @@ public class Roadmap {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json", nullable = false)
     private List<com.careerpilot.dto.roadmap.RoadmapPhaseDto> phases;
 
     @Column(name = "created_at", nullable = false, updatable = false)

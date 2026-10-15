@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, ArrowRight, Copy, Sparkles, Loader2 } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Copy, Sparkles, Loader2, History } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useJobPolling } from '@/hooks/useJobPolling';
 import toast from 'react-hot-toast';
 
 export const ResumeImprovementPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const analysisId = searchParams.get('analysisId');
 
   const [improvement, setImprovement] = useState<any>(null);
@@ -24,17 +25,20 @@ export const ResumeImprovementPage: React.FC = () => {
   // Initial fetch check
   useEffect(() => {
     if (!analysisId) {
-      setError('No analysis ID provided.');
       setLoading(false);
       return;
     }
     fetchImprovement();
   }, [analysisId]);
 
-  // Polling completion
+  // Polling completion — use resultPayload.id to re-fetch
   useEffect(() => {
     if (jobData?.status === 'COMPLETED') {
       fetchImprovement();
+      setJobId(null);
+    }
+    if (jobData?.status === 'FAILED') {
+      setError(jobData.errorMessage || 'Improvement generation failed.');
       setJobId(null);
     }
   }, [jobData]);
@@ -47,7 +51,6 @@ export const ResumeImprovementPage: React.FC = () => {
       setError(null);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        // It's okay, we haven't generated one yet
         setImprovement(null);
       } else {
         setError(err.response?.data?.message || 'Failed to fetch improvements.');
@@ -62,8 +65,10 @@ export const ResumeImprovementPage: React.FC = () => {
     try {
       setError(null);
       const response = await api.post(`/improvement/${analysisId}`);
-      if (response.status === 202 && response.data.jobId) {
-        setJobId(response.data.jobId);
+      // Backend JobResponse has field "id" (not "jobId")
+      const newJobId = response.data.id || response.data.jobId;
+      if (newJobId) {
+        setJobId(newJobId);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to start generation.');
@@ -76,6 +81,28 @@ export const ResumeImprovementPage: React.FC = () => {
     navigator.clipboard.writeText(text);
     toast.success('All improved bullets copied to clipboard!');
   };
+
+  // No analysis ID — prompt user to pick one from history
+  if (!analysisId) {
+    return (
+      <div className="max-w-3xl mx-auto mt-12 text-center space-y-6">
+        <History className="h-16 w-16 mx-auto text-slate-300" />
+        <h2 className="text-3xl font-bold">Select an Analysis First</h2>
+        <p className="text-muted-foreground text-lg">
+          To improve your resume, first run an analysis. Then click "Auto-Improve Resume Bullets" from the results page.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Button size="lg" onClick={() => navigate('/resume-analysis')}>
+            Analyze a Resume
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => navigate('/history')}>
+            <History className="h-4 w-4 mr-2" />
+            View History
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !isPolling) {
     return (
@@ -92,6 +119,9 @@ export const ResumeImprovementPage: React.FC = () => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error || pollError}</AlertDescription>
         </Alert>
+        <Button className="mt-4" variant="outline" onClick={() => { setError(null); fetchImprovement(); }}>
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -123,9 +153,9 @@ export const ResumeImprovementPage: React.FC = () => {
             Applying industry best practices to maximize impact.
           </p>
         </div>
-        <Progress value={jobData?.progress || 15} className="w-full h-3" />
+        <Progress value={jobData?.status === 'RUNNING' ? 50 : 15} className="w-full h-3" />
         <p className="text-center text-sm font-medium text-slate-600">
-          {jobData?.status === 'PROCESSING' ? 'Drafting improvements...' : 'Starting...'}
+          {jobData?.status === 'RUNNING' ? 'Drafting improvements...' : 'Starting...'}
         </p>
       </div>
     );
@@ -151,12 +181,14 @@ export const ResumeImprovementPage: React.FC = () => {
         </div>
       </div>
 
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-6">
-          <h3 className="font-semibold text-lg mb-2">Summary of Changes</h3>
-          <p className="text-slate-700 leading-relaxed">{improvement.summary}</p>
-        </CardContent>
-      </Card>
+      {improvement.summary && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-lg mb-2">Summary of Changes</h3>
+            <p className="text-slate-700 leading-relaxed">{improvement.summary}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="space-y-6">
         {improvement.improvements?.map((item: any, idx: number) => (
@@ -184,18 +216,21 @@ export const ResumeImprovementPage: React.FC = () => {
                     <CheckCircle2 className="h-4 w-4" /> Improved
                   </div>
                   <div className="flex gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {item.category}
-                    </Badge>
+                    {item.category && (
+                      <Badge variant="outline" className="text-xs">
+                        {item.category}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                {/* Highlight formatting can be added here by parsing additions, but for now we display full text */}
-                <p className="text-slate-900 font-medium leading-relaxed">
+                <p className="text-slate-900 font-medium leading-relaxed pr-8">
                   {item.improvedBullet}
                 </p>
-                <div className="mt-4 p-3 bg-blue-50/50 rounded text-sm text-slate-600 border border-blue-100">
-                  <span className="font-semibold text-slate-700">Why:</span> {item.reason}
-                </div>
+                {item.reason && (
+                  <div className="mt-4 p-3 bg-blue-50/50 rounded text-sm text-slate-600 border border-blue-100">
+                    <span className="font-semibold text-slate-700">Why:</span> {item.reason}
+                  </div>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -211,6 +246,9 @@ export const ResumeImprovementPage: React.FC = () => {
             </div>
           </Card>
         ))}
+        {(!improvement.improvements || improvement.improvements.length === 0) && (
+          <p className="text-center text-muted-foreground py-8">No improvements generated.</p>
+        )}
       </div>
     </div>
   );

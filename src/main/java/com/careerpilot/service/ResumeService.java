@@ -26,18 +26,25 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
-    private final PdfValidationService pdfValidationService;
+    private final FileValidationService fileValidationService;
+    private final ImageOcrService imageOcrService;
 
     @Transactional
     public ResumeResponse uploadResume(MultipartFile file) {
         long start = System.currentTimeMillis();
         
-        pdfValidationService.validatePdf(file);
+        fileValidationService.validateFile(file);
 
-        String rawText = extractTextFromPdf(file);
+        String rawText;
+        if (file.getContentType() != null && file.getContentType().startsWith("image/")) {
+            rawText = imageOcrService.extractTextFromImage(file);
+            rawText = cleanText(rawText);
+        } else {
+            rawText = extractTextFromPdf(file);
+        }
         
         long end = System.currentTimeMillis();
-        log.info("PDF validation and extraction took {} ms for file {}", (end - start), file.getOriginalFilename());
+        log.info("File validation and extraction took {} ms for file {}", (end - start), file.getOriginalFilename());
 
         User currentUser = getCurrentUser();
 

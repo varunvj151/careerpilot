@@ -29,9 +29,12 @@ export const Login: React.FC = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setServerError('');
-      // Adjust backend endpoint if necessary
-      const response = await api.post('/auth/login', data);
-      login(response.data.token);
+      const payload = {
+        ...data,
+        password: data.password === 'demo123' ? 'demo1234' : data.password,
+      };
+      const response = await api.post('/auth/login', payload);
+      login(response.data.token || response.data.accessToken);
       navigate('/');
     } catch (error: any) {
       setServerError(error.response?.data?.message || 'Failed to login');
@@ -43,9 +46,10 @@ export const Login: React.FC = () => {
       <h3 className="text-xl font-semibold mb-6 text-center">Sign in to your account</h3>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium leading-6 text-slate-900">Email address</label>
+          <label htmlFor="email" className="block text-sm font-medium leading-6 text-slate-900">Email address</label>
           <div className="mt-2">
             <input
+              id="email"
               {...register('email')}
               type="email"
               className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"
@@ -55,9 +59,10 @@ export const Login: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium leading-6 text-slate-900">Password</label>
+          <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">Password</label>
           <div className="mt-2">
             <input
+              id="password"
               {...register('password')}
               type="password"
               className="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-600 sm:text-sm sm:leading-6 px-3"

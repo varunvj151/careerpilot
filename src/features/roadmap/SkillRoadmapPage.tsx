@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Compass, Code, ExternalLink, Calendar, GitCommit, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { BookOpen, Compass, Code, ExternalLink, Calendar, GitCommit, Sparkles, Loader2, ArrowRight, History } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useJobPolling } from '@/hooks/useJobPolling';
 
 export const SkillRoadmapPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const analysisId = searchParams.get('analysisId');
 
   const [roadmap, setRoadmap] = useState<any>(null);
@@ -22,7 +23,6 @@ export const SkillRoadmapPage: React.FC = () => {
 
   useEffect(() => {
     if (!analysisId) {
-      setError('No analysis ID provided.');
       setLoading(false);
       return;
     }
@@ -32,6 +32,10 @@ export const SkillRoadmapPage: React.FC = () => {
   useEffect(() => {
     if (jobData?.status === 'COMPLETED') {
       fetchRoadmap();
+      setJobId(null);
+    }
+    if (jobData?.status === 'FAILED') {
+      setError(jobData.errorMessage || 'Roadmap generation failed.');
       setJobId(null);
     }
   }, [jobData]);
@@ -58,13 +62,37 @@ export const SkillRoadmapPage: React.FC = () => {
     try {
       setError(null);
       const response = await api.post(`/roadmap/${analysisId}`);
-      if (response.status === 202 && response.data.jobId) {
-        setJobId(response.data.jobId);
+      // Backend JobResponse uses "id", not "jobId"
+      const newJobId = response.data.id || response.data.jobId;
+      if (newJobId) {
+        setJobId(newJobId);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to start generation.');
     }
   };
+
+  // No analysis ID — guide user
+  if (!analysisId) {
+    return (
+      <div className="max-w-3xl mx-auto mt-12 text-center space-y-6">
+        <History className="h-16 w-16 mx-auto text-slate-300" />
+        <h2 className="text-3xl font-bold">Select an Analysis First</h2>
+        <p className="text-muted-foreground text-lg">
+          To view your skill roadmap, first run an analysis. Then click "View Skill Roadmap" from the results page.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Button size="lg" onClick={() => navigate('/resume-analysis')}>
+            Analyze a Resume
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => navigate('/history')}>
+            <History className="h-4 w-4 mr-2" />
+            View History
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !isPolling) {
     return (
@@ -81,6 +109,9 @@ export const SkillRoadmapPage: React.FC = () => {
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error || pollError}</AlertDescription>
         </Alert>
+        <Button className="mt-4" variant="outline" onClick={() => { setError(null); fetchRoadmap(); }}>
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -106,15 +137,15 @@ export const SkillRoadmapPage: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto mt-12 space-y-8">
         <div className="text-center space-y-4">
-          <Compass className="h-12 w-12 mx-auto text-primary animate-spin-slow" />
+          <Compass className="h-12 w-12 mx-auto text-primary animate-pulse" />
           <h2 className="text-2xl font-semibold">Plotting your course...</h2>
           <p className="text-muted-foreground">
             Analyzing dependencies and prioritizing skills for maximum impact.
           </p>
         </div>
-        <Progress value={jobData?.progress || 15} className="w-full h-3" />
+        <Progress value={jobData?.status === 'RUNNING' ? 50 : 15} className="w-full h-3" />
         <p className="text-center text-sm font-medium text-slate-600">
-          {jobData?.status === 'PROCESSING' ? 'Building learning phases...' : 'Starting...'}
+          {jobData?.status === 'RUNNING' ? 'Building learning phases...' : 'Starting...'}
         </p>
       </div>
     );
@@ -167,14 +198,18 @@ export const SkillRoadmapPage: React.FC = () => {
                         <h4 className="font-semibold text-lg">{skill.skillName}</h4>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline">{skill.classification}</Badge>
-                        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200 border-none">
-                          Priority {skill.priorityScore}
-                        </Badge>
+                        {skill.classification && <Badge variant="outline">{skill.classification}</Badge>}
+                        {skill.priorityScore && (
+                          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200 border-none">
+                            Priority {skill.priorityScore}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-sm text-slate-600 flex items-center gap-2">
-                        <Calendar className="h-4 w-4" /> {skill.learningHours} hours
-                      </div>
+                      {skill.learningHours && (
+                        <div className="text-sm text-slate-600 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" /> {skill.learningHours} hours
+                        </div>
+                      )}
                       {skill.dependency && (
                         <div className="text-sm text-slate-500 flex items-center gap-2 bg-slate-50 p-2 rounded">
                           <GitCommit className="h-4 w-4" /> Requires: {skill.dependency}
@@ -184,9 +219,11 @@ export const SkillRoadmapPage: React.FC = () => {
 
                     {/* AI Explanation & Resources */}
                     <div className="md:w-2/3 space-y-4">
-                      <p className="text-sm text-slate-700 leading-relaxed border-l-2 border-primary/20 pl-3">
-                        {skill.aiExplanation}
-                      </p>
+                      {skill.aiExplanation && (
+                        <p className="text-sm text-slate-700 leading-relaxed border-l-2 border-primary/20 pl-3">
+                          {skill.aiExplanation}
+                        </p>
+                      )}
                       
                       {skill.resources && skill.resources.length > 0 && (
                         <div>
@@ -231,7 +268,6 @@ export const SkillRoadmapPage: React.FC = () => {
                           </ul>
                         </div>
                       )}
-
                     </div>
                   </div>
                 ))}
@@ -239,6 +275,9 @@ export const SkillRoadmapPage: React.FC = () => {
             </CardContent>
           </Card>
         ))}
+        {(!roadmap.phases || roadmap.phases.length === 0) && (
+          <p className="text-center text-muted-foreground py-8">No roadmap phases generated.</p>
+        )}
       </div>
     </div>
   );

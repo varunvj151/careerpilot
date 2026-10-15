@@ -1,6 +1,6 @@
 package com.careerpilot.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
@@ -33,12 +33,12 @@ public class ImprovedResume {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
     private List<com.careerpilot.dto.improvement.BulletImprovementDto> improvements;
 
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
     private com.careerpilot.dto.improvement.ImprovementScoreDto scores;
 
     @Column(name = "created_at", nullable = false, updatable = false)

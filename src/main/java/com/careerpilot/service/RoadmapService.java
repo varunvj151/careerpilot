@@ -8,6 +8,7 @@ import com.careerpilot.entity.User;
 import com.careerpilot.repository.AnalysisRepository;
 import com.careerpilot.repository.RoadmapRepository;
 import com.careerpilot.repository.UserRepository;
+import com.careerpilot.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -140,7 +141,7 @@ public class RoadmapService {
     public RoadmapResponse getRoadmap(UUID analysisId) {
         User currentUser = getCurrentUser();
         Roadmap roadmap = roadmapRepository.findByAnalysisIdAndUserId(analysisId, currentUser.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Roadmap not found or access denied"));
+                .orElseThrow(() -> new ResourceNotFoundException("Roadmap not found or access denied"));
 
         return mapToResponse(roadmap);
     }

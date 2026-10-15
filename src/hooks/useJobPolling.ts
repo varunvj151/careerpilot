@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
 
-export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export interface JobResponse<T = any> {
-  jobId: string;
+  id: string;
+  jobType: string;
   status: JobStatus;
-  progress: number;
-  result?: T;
-  error?: string;
+  resultPayload?: T;
+  errorMessage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,7 +38,7 @@ export function useJobPolling<T>(jobId: string | null, intervalMs = 2000) {
         if (job.status === 'COMPLETED' || job.status === 'FAILED') {
           setIsPolling(false);
           if (job.status === 'FAILED') {
-            setError(job.error || 'Job failed processing');
+            setError(job.errorMessage || 'Job failed processing');
           }
         } else {
           // Continue polling

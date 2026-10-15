@@ -10,6 +10,7 @@ import com.careerpilot.entity.User;
 import com.careerpilot.repository.AnalysisRepository;
 import com.careerpilot.repository.ImprovedResumeRepository;
 import com.careerpilot.repository.UserRepository;
+import com.careerpilot.exception.ResourceNotFoundException;
 import com.careerpilot.service.ImprovementRuleEngineService.WeakBullet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +123,7 @@ public class ImprovementService {
     public ImprovementResponse getImprovement(UUID analysisId) {
         User currentUser = getCurrentUser();
         ImprovedResume improvedResume = improvedResumeRepository.findByAnalysisIdAndUserId(analysisId, currentUser.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Improvement not found or access denied"));
+                .orElseThrow(() -> new ResourceNotFoundException("Improvement not found or access denied"));
 
         return new ImprovementResponse(
                 improvedResume.getId(),
